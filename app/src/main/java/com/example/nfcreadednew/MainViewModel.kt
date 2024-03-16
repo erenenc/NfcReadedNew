@@ -1,15 +1,8 @@
 package com.example.nfcreadednew
 
 import android.app.Application
-import android.content.ContentValues
 import android.nfc.NfcAdapter
-import android.nfc.Tag
-import android.nfc.tech.MifareClassic
-import android.nfc.tech.MifareUltralight
-import android.nfc.tech.NfcA
 import android.os.Bundle
-import android.os.IBinder
-import android.os.Parcel
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,10 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.DateFormat
-import java.text.SimpleDateFormat
-import java.util.Date
-import kotlin.experimental.and
 
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -36,18 +25,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _liveNFC: MutableStateFlow<NFCStatus?> = MutableStateFlow(null)
     val liveNFC = _liveNFC.asStateFlow()
 
-    private val _liveToast: MutableStateFlow<String?> = MutableStateFlow(null)
-    val liveToast = _liveToast.asStateFlow()
-
-    private val _liveTag: MutableStateFlow<String?> = MutableStateFlow(null)
-    val liveTag = _liveTag.asStateFlow()
-
-
-    private suspend fun postToast(message: String) {
-        Log.d(TAG, "postToast(${message})")
-        _liveToast.update { message }
-    }
-
+    private val _liveMessage: MutableStateFlow<String?> = MutableStateFlow(null)
+    val liveMessage = _liveMessage.asStateFlow()
 
     fun getNFCFlags(): Int {
         return NfcAdapter.FLAG_READER_NFC_A or
@@ -72,12 +51,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 postNFCStatus(NFCStatus.Tap)
             } else {
                 postNFCStatus(NFCStatus.NoOperation)
-                postToast("NFC is Disabled, Please Toggle On!")
             }
         }
     }
 
-    fun readTag(tag: Tag?) {
+    private fun postNFCStatus(status: NFCStatus) {
+        Log.d(TAG, "postNFCStatus(${status})")
+
+        if (status == NFCStatus.Tap) {
+            if (NFCManager.isSupportedAndEnabled(context)) {
+                _liveNFC.update { status }
+                _liveMessage.update { "Please Tap Now!" }
+            } else if (NFCManager.isNotEnabled(context)) {
+                _liveNFC.update { NFCStatus.NotEnabled }
+                _liveMessage.update { "Please Enable your NFC!" }
+            } else if (NFCManager.isNotSupported(context)) {
+                _liveNFC.update { NFCStatus.NotSupported }
+                _liveMessage.update { "NFC Not Supported!" }
+            }
+        } else {
+            _liveNFC.update { status }
+            _liveMessage.update { "NFC is disabled by user" }
+        }
+    }
+
+    /*fun readTag(tag: Tag?) {
         // bunun yerine activity onTagDiscovered içindeki kodlar kullanılacak
         viewModelScope.launch {
             Log.d(TAG, "readTag(${tag} ${tag?.techList})")
@@ -126,26 +124,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             Log.d(ContentValues.TAG, "dumpTagData Return \n $stringBuilder")
             postNFCStatus(NFCStatus.Read)
             _liveTag.update { "${getDateTimeNow()} \n ${stringBuilder}" }
-        }
-    }
-
-    private suspend fun postNFCStatus(status: NFCStatus) {
-        Log.d(TAG, "postNFCStatus(${status})")
-        if (NFCManager.isSupportedAndEnabled(context)) {
-            _liveNFC.update { status }
-        } else if (NFCManager.isNotEnabled(context)) {
-            _liveNFC.update { NFCStatus.NotEnabled }
-            postToast("Please Enable your NFC!")
-            _liveTag.update { "Please Enable your NFC!" }
-        } else if (NFCManager.isNotSupported(context)) {
-            _liveNFC.update { NFCStatus.NotSupported }
-            postToast("NFC Not Supported!")
-            _liveTag.update { "NFC Not Supported!" }
-        }
-        if (NFCManager.isSupportedAndEnabled(context) && status == NFCStatus.Tap) {
-            _liveTag.update { "Please Tap Now!" }
-        } else {
-            _liveTag.update { null }
         }
     }
 
@@ -271,5 +249,5 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val nTag = Tag.CREATOR.createFromParcel(nParcel)
         nParcel.recycle()
         return nTag
-    }
+    }*/
 }

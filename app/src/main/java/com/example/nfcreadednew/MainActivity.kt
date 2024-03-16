@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -65,7 +64,7 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
         lifecycleScope.launch {
             this@MainActivity.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.liveNFC.collect { nfcStatus ->
-                    Log.d(TAG, "observeNFCStatus $nfcStatus")
+                    Log.d(TAG, "mainactivity observe liveNFC $nfcStatus")
                     if (nfcStatus == NFCStatus.NoOperation) NFCManager.disableReaderMode(
                         this@MainActivity,
                         this@MainActivity
@@ -83,20 +82,9 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
 
         lifecycleScope.launch {
             this@MainActivity.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.liveTag.collect { tag ->
-                    Log.d(TAG, "observeTag $tag")
-                    binding.tvNfc.text = tag
-                }
-            }
-        }
-
-        lifecycleScope.launch {
-            this@MainActivity.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.liveToast.collect { message ->
-                    Log.d(TAG, "observeToast $message")
-                    if (message != null) {
-                        Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
-                    }
+                viewModel.liveMessage.collect { message ->
+                    Log.d(TAG, "mainactivity observe liveMessage $message")
+                    binding.tvNfc.text = message
                 }
             }
         }
